@@ -1,0 +1,22 @@
+name: nde
+channels:
+  - pytorch
+  - conda-forge
+  - nvidia
+  - anaconda
+  - defaults
+dependencies:
+  - cudatoolkit=11.1.74
+  - geopandas=0.8.1
+  - pip=21.1.1
+  - python=3.8.2
+  - pytorch=1.8.1
+  - tensorboardx=2.2
+  - pip:
+    - pandas==1.2.4
+    - pyyaml==5.4.1
+    - torch-cluster==1.5.9
+    - torch-geometric==1.7.0
+    - torch-scatter==2.0.6
+    - torch-sparse==0.6.9
+    - torchdiffeq==0.2.2
