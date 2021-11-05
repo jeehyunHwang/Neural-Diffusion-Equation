@@ -14,8 +14,8 @@ def get_parser():
                         dest="filename",
                         help="experiment definition file (YAML format)",
                         metavar="FILE",
-                        # default="./cfg_files_ode/LA-PIGNODE.yaml",
-                        default="./cfg_files_ode/SD-PIGNODE.yaml",
+                        # default="LA-PIGNODE.yaml",
+                        default="SD-PIGNODE.yaml",
                         )
     
     parser.add_argument("--model_path",
@@ -127,20 +127,18 @@ def main(cfg):
     dropout_rate = cfg['model']['dropout_rate']
     ##########################################
 
+    ############ Training setting ############
     num_processing_steps = cfg['train']['num_processing_steps']    # Forecast horizon
     num_iterations = cfg['train']['num_iter']
     multistep = cfg['train']['multistep']
-    loss_coeff = cfg['train']['loss_coeff']
     input_seq = cfg['train']['input_sequence']
+    valid_iter = cfg['train']['valid_iter']
+    ##########################################
 
-    losses1_save = []
-    losses2_save = []
     losses_save = []
     val_losses_save = []
-    used_timestamps = []
 
-    ####### create physics coefficient matrix using edge attribute ###########
-
+    ####### create physics coefficient matrix using edge attribute shape ###########
     one_hot_encoder = torch.zeros(size=(num_nodes*num_nodes, edge_attr_type), device=device)
     for i in range(len(edge_attr)):
         one_hot_encoder[edge_index[:,i][0]*num_nodes + edge_index[:,i][1], edge_attr[i]] = 1
@@ -174,7 +172,7 @@ def main(cfg):
         model.load_state_dict(torch.load(cfg['modelpath'], map_location=device))
         logging.info("pretrained model is loaded. {}".format(cfg['modelpath']))
 
-    elif cfg['model']['model']=='NDE':
+    else:
         model = ODENet(node_features * input_seq,
                        enc_node_features,
                        sp_L,
@@ -209,7 +207,6 @@ def main(cfg):
     model.to(device)
     model.train()
     phy_params = []
-    nn_params = []
     best_result = np.inf
     
     optimizer = optim.RMSprop(model.parameters(), 
@@ -221,11 +218,8 @@ def main(cfg):
     
     #### Training
     for iter_ in range(num_iterations):
-        #### Sample a starting timestep randomly
-        t = np.random.randint(input_seq - 1, tr_ind - num_processing_steps - multistep)    # low (inclusive) to high (exclusive)
+        t = np.random.randint(input_seq - 1, tr_ind - num_processing_steps - multistep)
 
-        #### Set input_graph
-        # initial global_attr is dummy tensor.
         if input_seq == 1:
             input_data = [Data(x=torch.tensor(X[t+step_t,:,1:], dtype=torch.float32, device=device))
                            for step_t in range(num_processing_steps)]
@@ -233,26 +227,28 @@ def main(cfg):
             input_data = [Data(x=torch.tensor(np.concatenate([X[t+step_t+i,:,1:] for i in range(input_seq)], 1)\
                             , dtype=torch.float32, device=device))
                             for step_t in range(num_processing_steps)]
+
         eval_times = [Data(t=torch.tensor([t+step_t+input_seq-1,t+step_t+input_seq], dtype=torch.float32, device=device))
                            for step_t in range(num_processing_steps)]
-        #### Passing the model-
+        
         outputs, phy_params = model(input_data, eval_times, num_processing_steps)
-        #### Training loss across processing steps.
+        
         if use_initial:
             losses = [sum([torch.sum((out - torch.tensor(X[t+step_t+multi+input_seq-1,:,:1], dtype=torch.float32, device=device))**2)
                                 for multi, out in enumerate(output)])/len(output) for step_t, output in enumerate(outputs)]
         else:
             losses = [sum([torch.sum((out - torch.tensor(X[t+1+step_t+multi+input_seq,:,:1], dtype=torch.float32, device=device))**2)
                                 for multi, out in enumerate(output)])/len(output) for step_t, output in enumerate(outputs)]
-        loss = sum(losses) / len(losses) # mean over num_predicted_steps
+        
+        loss = sum(losses) / len(losses)
         losses_save.append(loss.item())
         
         writer.add_scalars('loss/train', {'loss': losses_save[-1]}, iter_)
         writer.add_scalars('loss/train', {'loss_per_node': losses_save[-1]/num_nodes}, iter_)
-        #### Backward and optimize
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
         if iter_ == 0:
             if use_mini and use_physics:
                 torch.save(model.state_dict(), os.path.join(modeldir, "MINI NN + PHY"))
@@ -262,8 +258,9 @@ def main(cfg):
                 torch.save(model.state_dict(), os.path.join(modeldir, "PHY"))
                 
         #### Validation
-        if iter_%(epoch_iter*2) == 0:
+        if iter_%valid_iter == 0:
             losses_val_save = []
+
             if input_seq == 1:
                 input_data = [Data(x=torch.tensor(X[tr_ind+step_t,:,1:], dtype=torch.float32, device=device)) 
                                 for step_t in range(50 - multistep)]
@@ -275,18 +272,17 @@ def main(cfg):
                             for step_t in range(50 - multistep)]
             outputs, phy_params = model(input_data, eval_times, 51 - multistep - input_seq)
             
-            #### Validation loss across processing steps.
             if use_initial:
-                # calc loss excluding current timestep (initial value)
                 val_losses = [sum([torch.sum((out - torch.tensor(X[tr_ind+multi+step_t+input_seq,:,:1], dtype=torch.float32, device=device))**2)
                                 for multi, out in enumerate(output[1:])])/len(output[1:]) for step_t, output in enumerate(outputs)]
             else:
                 val_losses = [sum([torch.sum((out - torch.tensor(X[tr_ind+multi+step_t+input_seq,:,:1], dtype=torch.float32, device=device))**2)
                                 for multi, out in enumerate(output)])/len(output) for step_t, output in enumerate(outputs)]
-            val_loss = sum(val_losses) / len(val_losses)    # mean over num_predicted_steps
+
+            val_loss = sum(val_losses) / len(val_losses)
             losses_val_save.append(val_loss.item())
 
-            # When best validation is found, check test set
+            #### Test
             if (len(val_losses_save)>0) and (np.mean(losses_val_save)<np.min(val_losses_save)):
                 if use_mini and use_physics:
                     torch.save(model.state_dict(), os.path.join(modeldir, "MINI NN + PHY"))
@@ -306,17 +302,16 @@ def main(cfg):
                                     for step_t in range(te_ind - val_ind - multistep - 1)]
 
                 outputs, phy_params = model(input_data, eval_times, te_ind - val_ind - multistep - input_seq)
-                #### Test loss across processing steps.
+
                 if use_initial:
-                    # calc loss excluding current timestep (initial value)
                     te_losses = [sum([torch.sum((out - torch.tensor(X[val_ind+multi+step_t+1,:,:1], dtype=torch.float32, device=device))**2) 
                                     for multi, out in enumerate(output[1:])])/len(output[1:]) for step_t, output in enumerate(outputs)]
                 else:
                     te_losses = [sum([torch.sum((out - torch.tensor(X[val_ind+multi+step_t+1,:,:1], dtype=torch.float32, device=device))**2) 
                                     for multi, out in enumerate(output)])/len(output) for step_t, output in enumerate(outputs)]
-                te_loss = sum(te_losses) / len(te_losses)    # mean over num_predicted_steps
+                te_loss = sum(te_losses) / len(te_losses)
 
-                if te_loss.item() <= best_result:   # save best result
+                if te_loss.item() <= best_result:
                     best_result = te_loss.item()
 
                 writer.add_scalars('loss/test', {'loss_sup': te_loss.item()}, iter_)
@@ -392,7 +387,7 @@ def make_paths_absolute(dir_, cfg):
 
     
 if __name__=="__main__":
-    cfg = load_cfg(args.filename)
+    cfg = load_cfg("./cfg_files_ode/" + args.filename)
     cfg['modelpath'] = args.modelpath
     cfg['comment'] = args.comment
     main(cfg)
