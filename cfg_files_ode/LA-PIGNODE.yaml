@@ -1,33 +1,28 @@
 model:
-  model: NDE 
-  MINI_NN: 1
-  PHY_EQ: 1
-  MODE_desc: PHY+MINI
-  mininet_dim: 128
-  enc_node_feat: 32
-  time_dependent: 1
-  nonlinear: relu
-  activation: tanh
-  method: rk4   # euler, rk4 / dopri5
-  tol: 0.001
-  adjoint: 1
-  use_initial: 0
-  dropout_rate: 0
+  MODE_desc: PHY+MINI                                          # Model description
+  MINI_NN: 1                                                   # Whether to use mini neural network for noise modeling
+  PHY_EQ: 1                                                    # Whether to use diffusion equation for noise modeling
+  mininet_dim: 128                                             # Mini neural network hidden dimension
+  enc_node_feat: 32                                            # Encoder hidden dimension
+  time_dependent: 1                                            # Whether to use neural ode as time dependent model
+  nonlinear: relu                                              # Nonlinear layer of model
+  activation: tanh                                             # Activation layer of model
+  method: rk4                                                  # Solver of NDE (euler, rk4, dopri5)
+  tol: 0.001                                                   # Tolerance setting of NDE solver
+  adjoint: 1                                                   # Whether to use adjoint senstivity method for NDE solving
+  use_initial: 0                                               # Use initial value for NDE training
+  dropout_rate: 0                                              # Dropout rate of model
 dataset:
-  REGION: LA
-  X_path: ./dataset/X_LA.npy
-  edge_index_path: ./dataset/edge_index_LA.npy
-  edge_attr_path: ./dataset/edge_attr_LA.npy
+  REGION: LA                                                   # Region of dataset
+  X_path: ./dataset/X_LA.npy                                   # Path of dataset features
+  edge_index_path: ./dataset/edge_index_LA.npy                 # Path of edge index
+  edge_attr_path: ./dataset/edge_attr_LA.npy                   # Path of edge attribute, values are not used
 optimizer:
-  initial_lr: 0.001
-  weight_decay: 0.0005
+  initial_lr: 0.001                                            # Initial learning rate
+  weight_decay: 0.0005                                         # Weight decay parameter for l2 regularization
 train:
-  num_iter: 200000
-  num_processing_steps: 10    # number of processing steps=batch
-  valid_iter: 50
-  verbose_iter: 50
-  multistep: 1
-  loss_coeff: 0.001
-  input_sequence: 1   # 1, 3, 5
-device:
-  gpu: 3
+  num_iter: 200000                                             # Iteration num for training (num epoch = Data_Time_Dim // num_processing_steps)
+  num_processing_steps: 10                                     # Batch num for training
+  valid_iter: 50                                               # Validation iteration interval
+  multistep: 1                                                 # Multistep prediction num (1, 10)
+  input_sequence: 1                                            # Input sequence for training (1, 3, 5)
