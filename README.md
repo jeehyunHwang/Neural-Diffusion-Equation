@@ -1,6 +1,16 @@
 # Climate Modeling with Neural Diffusion Equation
+[![BigDyL Link](https://img.shields.io/static/v1?label=&message=BigDyL&color=blue)](https://sites.google.com/view/npark/home?authuser=0)
 
-## Dependencies
+## Introduction
+This is the repository of our accepted ICDM 2021 paper "Climate Modeling with Neural Diffusion Equations".
+
+## Our Proposed NDE
+<img src="img/fig1.pdf">
+<img src="img/NDE.pdf">
+
+## Setup python environment for NDE
+
+### Install python environment
 ```{bash}
 conda create -n nde python==3.8.0
 conda install pytorch==1.7.0 cudatoolkit=11.0 -c pytorch
@@ -15,14 +25,27 @@ pip install torchdiffeq
 ```
 
 or you can install conda environment via `environment.yml`
-
 ```{bash}
 conda env create -f environment.yml
 ```
 
-## How to run
+### Activate environment
+```{bash}
+conda activate nde
+```
 
+## How to run
 One-step prediction for LA Dataset
 ```{bash}
 bash run.sh
 ```
+
+### Experimental Setting (See more detail in cfg_files_ode/*.yaml)
+- file
+    - LA.yaml, SD.yaml
+- model_path
+    - **False**, True
+- comment
+    - default: ''
+- gpu
+    - default: 0
