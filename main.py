@@ -31,7 +31,7 @@ def get_parser():
     parser.add_argument("--gpu",
                 type=str,
                 help="gpu num",
-                default="1")
+                default="0")
 
     return parser
 
