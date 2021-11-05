@@ -36,8 +36,7 @@ conda activate nde
 
 ## How to run
 
-####
-One-step prediction for LA Dataset
+#### One-step prediction for LA Dataset
 ```{bash}
 bash run.sh
 ```
