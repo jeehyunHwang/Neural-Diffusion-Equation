@@ -5,8 +5,8 @@
 This is the repository of our accepted ICDM 2021 paper "Climate Modeling with Neural Diffusion Equations".
 
 ## Our Proposed NDE
-<img src="img/fig1.pdf">
-<img src="img/NDE.pdf">
+<img src="img/fig.png">
+<img src="img/NDE.png">
 
 ## Setup python environment for NDE
 
