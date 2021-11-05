@@ -14,8 +14,8 @@ def get_parser():
                         dest="filename",
                         help="experiment definition file (YAML format)",
                         metavar="FILE",
-                        # default="LA-PIGNODE.yaml",
-                        default="SD-PIGNODE.yaml",
+                        # default="LA.yaml",
+                        default="SD.yaml",
                         )
     
     parser.add_argument("--model_path",
@@ -198,8 +198,6 @@ def main(cfg):
                        dropout_rate=dropout_rate, 
                        device=device)
         logging.info("new model is initialized. {}".format(modeldir))
-        if use_physics != 0:
-            logging.info("random coefficients: {}".format(model.odefunc.phy_params))
 
     num_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logging.info("# params in model: {}".format(num_total_params))
@@ -321,8 +319,6 @@ def main(cfg):
                              .format(loss,
                                      np.mean(losses_val_save), np.mean(losses_val_save)/num_nodes, 
                                      te_loss.item(), te_loss.item()/num_nodes))
-                if use_physics != 0:
-                    logging.info("Trained coefficients: {}".format(phy_params))
 
             val_losses_save.append(np.mean(losses_val_save))
             writer.add_scalars('loss/valid', {'loss_sup': val_losses_save[-1]}, iter_)
