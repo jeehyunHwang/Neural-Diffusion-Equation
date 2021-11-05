@@ -10,7 +10,7 @@ This is the repository of our accepted ICDM 2021 paper "Climate Modeling with Ne
 
 ## Setup python environment for NDE
 
-### Install python environment
+#### Install python environment
 ```{bash}
 conda create -n nde python==3.8.0
 conda install pytorch==1.7.0 cudatoolkit=11.0 -c pytorch
@@ -29,18 +29,20 @@ or you can install conda environment via `environment.yml`
 conda env create -f environment.yml
 ```
 
-### Activate environment
+#### Activate environment
 ```{bash}
 conda activate nde
 ```
 
 ## How to run
+
+####
 One-step prediction for LA Dataset
 ```{bash}
 bash run.sh
 ```
 
-### Experimental Setting (See more detail in cfg_files_ode/*.yaml)
+#### Experimental Setting (See more detail in cfg_files_ode/*.yaml)
 - file
     - LA.yaml, SD.yaml
 - model_path
