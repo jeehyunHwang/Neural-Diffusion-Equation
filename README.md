@@ -1,8 +1,8 @@
 # Climate Modeling with Neural Diffusion Equation
-[![BigDyL Link](https://img.shields.io/static/v1?label=&message=BigDyL&color=blue)](https://sites.google.com/view/npark/home?authuser=0)
+[![Arxiv link](https://img.shields.io/static/v1?label=arXiv&message=LT-OCF&color=red&logo=arxiv)](https://arxiv.org/abs/2108.06208)[![BigDyL Link](https://img.shields.io/static/v1?label=&message=BigDyL&color=blue)](https://sites.google.com/view/npark/home?authuser=0)
 
 ## Introduction
-This is the repository of our accepted ICDM 2021 paper "Climate Modeling with Neural Diffusion Equations".
+This is the repository of our accepted ICDM 2021 paper "Climate Modeling with Neural Diffusion Equations". Paper is available on [arxiv](https://arxiv.org/abs/2111.06011)
 
 ## Our Proposed NDE
 <img src="img/fig.png">
