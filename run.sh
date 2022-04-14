@@ -1,1 +1,1 @@
-python main_pgnode.py --file="./cfg_files_ode/LA-PIGNODE.yaml" --gpu=0
+python main.py --file="./cfg_files_ode/LA.yaml" --gpu=0
